@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { Toaster } from "@/components/ui/sonner";
+import { SecretTapZone } from "@/components/SecretTapZone";
 
 function NotFoundComponent() {
   return (
@@ -80,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lumora — Cloudflare streaming site package" },
-      { name: "description", content: "Lumora: a premium video streaming site for Cloudflare Pages and D1." },
-      { property: "og:title", content: "Lumora — Cloudflare streaming site package" },
-      { property: "og:description", content: "Lumora: a premium video streaming site for Cloudflare Pages and D1." },
+      { title: "Lumora — ভিডিও সাইট" },
+      { name: "description", content: "Lumora-তে নতুন ভিডিও দেখুন।" },
+      { property: "og:title", content: "Lumora — ভিডিও সাইট" },
+      { property: "og:description", content: "Lumora-তে নতুন ভিডিও দেখুন।" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -97,7 +99,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap",
       },
     ],
   }),
@@ -109,7 +111,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="bn">
       <head>
         <HeadContent />
       </head>
@@ -128,6 +130,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <SecretTapZone />
+      <Toaster position="top-center" theme="dark" />
     </QueryClientProvider>
   );
 }

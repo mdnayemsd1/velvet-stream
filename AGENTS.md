@@ -30,4 +30,5 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
-- The real product (Lumora streaming site) ships as a standalone Cloudflare Pages + D1 ZIP built outside this app; this TanStack app only hosts an info page pointing to it. Why: the user deploys via GitHub → Cloudflare Pages with D1, which the Lovable preview cannot run.
+- The video site runs inside this TanStack app on Lovable Cloud: public reads go through server functions with the publishable client; all writes go through server functions that check the admin session and use the service-role client. Why: the videos table has only a public SELECT policy, so writes cannot happen from the browser.
+- Admin auth is a single shared password (ADMIN_PASSWORD secret) plus an encrypted session cookie (SESSION_SECRET), not user accounts. Why: there is one owner and no sign-up; the cookie is SameSite=None + Partitioned so it works inside the editor preview frame.

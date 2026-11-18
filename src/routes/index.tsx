@@ -1,65 +1,103 @@
-import { createFileRoute } from "@tanstack/react-router";
-import logo from "@/assets/lumora-logo.svg";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { Search, Play } from "lucide-react";
+import { videosQuery } from "@/lib/queries";
+import { SiteHeader } from "@/components/SiteHeader";
+import { VideoCard, timeAgo } from "@/components/VideoCard";
+import { thumbnailFor } from "@/lib/video-utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lumora — Premium streaming site for Cloudflare Pages" },
-      {
-        name: "description",
-        content:
-          "Download Lumora: a premium video streaming website with a hidden admin studio, built for Cloudflare Pages, Functions and D1.",
-      },
-      { property: "og:title", content: "Lumora — Premium streaming site for Cloudflare Pages" },
-      {
-        property: "og:description",
-        content: "A premium video streaming website with a hidden admin studio, ready for Cloudflare Pages and D1.",
-      },
+      { title: "Lumora — ভিডিও দেখুন" },
+      { name: "description", content: "Lumora-তে সব নতুন ভিডিও এক জায়গায় দেখুন।" },
+      { property: "og:title", content: "Lumora — ভিডিও দেখুন" },
+      { property: "og:description", content: "Lumora-তে সব নতুন ভিডিও এক জায়গায় দেখুন।" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Index,
+  loader: ({ context }) => context.queryClient.ensureQueryData(videosQuery()),
+  component: Home,
 });
 
-const steps = [
-  { title: "Push to GitHub", text: "Unzip the package and push it to a new repository." },
-  { title: "Create the D1 database", text: "Create “lumora-db”, run schema.sql, and paste its ID into wrangler.toml." },
-  { title: "Connect Cloudflare Pages", text: "Choose the repo, set the output folder to “public” and leave the build command empty." },
-  { title: "Add two secrets", text: "Add ADMIN_PASSWORD and SESSION_SECRET in Settings → Variables and Secrets, then redeploy." },
-];
+function Home() {
+  const { data: videos } = useSuspenseQuery(videosQuery());
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    return s ? videos.filter((v) => v.title.toLowerCase().includes(s)) : videos;
+  }, [q, videos]);
+  const featured = !q && videos[0];
+  const rest = featured ? filtered.slice(1) : filtered;
 
-function Index() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center gap-10 px-5 py-16">
-      <header className="flex items-center gap-3">
-        <img src={logo} alt="" width={44} height={44} className="drop-shadow-[var(--shadow-glow)]" />
-        <span className="font-display text-2xl font-bold tracking-tight">Lumora</span>
-      </header>
+    <>
+      <SiteHeader>
+        <label className="relative w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="ভিডিও খুঁজুন…"
+            aria-label="ভিডিও খুঁজুন"
+            className="h-10 w-full rounded-full border border-input bg-secondary/60 pl-9 pr-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30"
+          />
+        </label>
+      </SiteHeader>
 
-      <section className="space-y-5">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">Cloudflare Pages · Functions · D1</p>
-        <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-          Your premium streaming site is{" "}
-          <span className="bg-brand-gradient bg-clip-text text-transparent">ready to deploy</span>
-        </h1>
-        <p className="max-w-xl text-lg text-muted-foreground">
-          The full source code is in your Files as <strong className="text-foreground">lumora-stream.zip</strong>,
-          including the hidden 7-tap admin studio, the database setup and the README.
-        </p>
-      </section>
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-6">
+        {featured && (
+          <Link
+            to="/watch/$id"
+            params={{ id: featured.id }}
+            className="group relative mb-10 block overflow-hidden rounded-3xl border border-border"
+          >
+            <div className="relative aspect-[16/9] sm:aspect-[21/9]">
+              {thumbnailFor(featured.url) ? (
+                <img src={thumbnailFor(featured.url)!} alt="" className="size-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              ) : (
+                <div className="bg-brand-gradient size-full opacity-50" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+                <span className="text-sm font-bold text-accent">নতুন ভিডিও</span>
+                <h1 className="mt-2 line-clamp-2 max-w-2xl font-display text-2xl font-bold leading-tight sm:text-4xl">
+                  {featured.title}
+                </h1>
+                <div className="mt-4 flex items-center gap-3">
+                  <span className="bg-brand-gradient inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-primary-foreground">
+                    <Play className="size-4 fill-current" /> এখনই দেখুন
+                  </span>
+                  <span className="text-xs text-muted-foreground">{timeAgo(featured.created_at)}</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        )}
 
-      <ol className="grid gap-3 sm:grid-cols-2">
-        {steps.map((step, i) => (
-          <li key={step.title} className="glass rounded-2xl p-5">
-            <span className="bg-brand-gradient inline-grid size-8 place-items-center rounded-full text-sm font-bold text-primary-foreground">
-              {i + 1}
-            </span>
-            <h2 className="mt-3 font-display text-lg font-semibold">{step.title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{step.text}</p>
-          </li>
-        ))}
-      </ol>
-    </main>
+        {videos.length === 0 ? (
+          <div className="glass mx-auto mt-16 max-w-md rounded-3xl p-10 text-center">
+            <h1 className="font-display text-2xl font-bold">এখনও কোনো ভিডিও নেই</h1>
+            <p className="mt-2 text-sm text-muted-foreground">নতুন ভিডিও যোগ হলে এখানে দেখা যাবে।</p>
+          </div>
+        ) : rest.length === 0 && !q ? null : (
+          <>
+            <h2 className="mb-4 font-display text-lg font-semibold">{q ? `“${q}” এর ফলাফল` : "সব ভিডিও"}</h2>
+            {rest.length === 0 ? (
+              <p className="text-sm text-muted-foreground">কোনো ভিডিও পাওয়া যায়নি।</p>
+            ) : (
+              <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+                {rest.map((v) => (
+                  <VideoCard key={v.id} video={v} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </>
   );
 }
