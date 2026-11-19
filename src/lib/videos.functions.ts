@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { parseVideoUrl } from "./video-utils";
+import { AD_CODE_MAX, AD_COUNT } from "./ads";
 import {
   LOCKOUT_MINUTES,
   MAX_FAILED_LOGINS,
@@ -115,6 +116,31 @@ export const deleteVideo = createServerFn({ method: "POST" })
     await requireAdmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("videos").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export type AdCodes = Record<number, string>;
+
+export const getAds = createServerFn({ method: "GET" }).handler(async (): Promise<AdCodes> => {
+  const { data, error } = await publicClient().from("ad_slots").select("slot, code");
+  if (error) throw new Error(error.message);
+  const out: AdCodes = {};
+  for (let i = 1; i <= AD_COUNT; i++) out[i] = data?.find((r) => r.slot === i)?.code ?? "";
+  return out;
+});
+
+export const saveAds = createServerFn({ method: "POST" })
+  .inputValidator((input: { codes: string[] }) => {
+    const codes = Array.from({ length: AD_COUNT }, (_, i) => String(input.codes?.[i] ?? "").trim());
+    if (codes.some((c) => c.length > AD_CODE_MAX)) throw new Error("বিজ্ঞাপনের কোড অনেক বড়।");
+    return { codes };
+  })
+  .handler(async ({ data }) => {
+    await requireAdmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const rows = data.codes.map((code, i) => ({ slot: i + 1, code, updated_at: new Date().toISOString() }));
+    const { error } = await supabaseAdmin.from("ad_slots").upsert(rows, { onConflict: "slot" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

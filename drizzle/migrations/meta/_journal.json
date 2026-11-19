@@ -8,6 +8,13 @@
       "when": 1794970962732,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795075527828,
+      "tag": "0001_create_ad_slots",
+      "breakpoints": true
     }
   ]
 }

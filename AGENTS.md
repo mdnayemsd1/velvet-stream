@@ -32,3 +32,4 @@ use the editor.
 ## Project rules
 - The video site runs inside this TanStack app on Lovable Cloud: public reads go through server functions with the publishable client; all writes go through server functions that check the admin session and use the service-role client. Why: the videos table has only a public SELECT policy, so writes cannot happen from the browser.
 - Admin auth is a single shared password (ADMIN_PASSWORD secret) plus an encrypted session cookie (SESSION_SECRET), not user accounts. Why: there is one owner and no sign-up; the cookie is SameSite=None + Partitioned so it works inside the editor preview frame.
+- Ad code pasted by the admin renders only inside a sandboxed srcdoc iframe without allow-same-origin. Why: third-party ad scripts must never run with the site's origin or reach the admin session.

@@ -1,7 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { videoQuery, videosQuery } from "@/lib/queries";
+import { adsQuery, videoQuery, videosQuery } from "@/lib/queries";
+import { firstAdStep, nextAdStep, type AdStep } from "@/lib/ads";
+import { AdGate } from "@/components/AdGate";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { VideoCard, timeAgo } from "@/components/VideoCard";
@@ -11,6 +14,7 @@ export const Route = createFileRoute("/watch/$id")({
     const [video] = await Promise.all([
       context.queryClient.ensureQueryData(videoQuery(params.id)),
       context.queryClient.ensureQueryData(videosQuery()),
+      context.queryClient.ensureQueryData(adsQuery()),
     ]);
     if (!video) throw notFound();
     return { title: video.title };
@@ -47,6 +51,13 @@ function Watch() {
   const { id } = Route.useParams();
   const { data: video } = useSuspenseQuery(videoQuery(id));
   const { data: all } = useSuspenseQuery(videosQuery());
+  const { data: ads } = useSuspenseQuery(adsQuery());
+  const [step, setStep] = useState<AdStep>(firstAdStep);
+  const [shownFor, setShownFor] = useState(id);
+  if (shownFor !== id) {
+    setShownFor(id);
+    setStep(firstAdStep());
+  }
   if (!video) return null;
   const more = all.filter((v) => v.id !== id).slice(0, 12);
 
@@ -58,7 +69,16 @@ function Watch() {
           <Link to="/" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="size-4" /> সব ভিডিও
           </Link>
-          <VideoPlayer key={video.id} url={video.url} title={video.title} />
+          {step.kind === "ad" ? (
+            <AdGate
+              index={step.index}
+              code={ads[step.index] ?? ""}
+              videoUrl={video.url}
+              onDone={() => setStep(nextAdStep(step))}
+            />
+          ) : (
+            <VideoPlayer key={video.id} url={video.url} title={video.title} autoPlay />
+          )}
           <h1 className="mt-5 font-display text-2xl font-bold leading-tight sm:text-3xl">{video.title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{timeAgo(video.created_at)}</p>
         </section>

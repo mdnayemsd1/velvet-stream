@@ -5,7 +5,7 @@ import { Search, Play } from "lucide-react";
 import { videosQuery } from "@/lib/queries";
 import { SiteHeader } from "@/components/SiteHeader";
 import { VideoCard, timeAgo } from "@/components/VideoCard";
-import { thumbnailFor } from "@/lib/video-utils";
+import { VideoThumb } from "@/components/VideoThumb";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -56,11 +56,7 @@ function Home() {
             className="group relative mb-10 block overflow-hidden rounded-3xl border border-border"
           >
             <div className="relative aspect-[16/9] sm:aspect-[21/9]">
-              {thumbnailFor(featured.url) ? (
-                <img src={thumbnailFor(featured.url)!} alt="" className="size-full object-cover transition-transform duration-700 group-hover:scale-105" />
-              ) : (
-                <div className="bg-brand-gradient size-full opacity-50" />
-              )}
+              <VideoThumb url={featured.url} className="transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
                 <span className="text-sm font-bold text-accent">নতুন ভিডিও</span>

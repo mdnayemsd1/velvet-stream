@@ -4,14 +4,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ExternalLink, Lock, LogOut, Trash2 } from "lucide-react";
-import { adminStatusQuery, videosQuery } from "@/lib/queries";
-import { addVideo, adminLogin, adminLogout, deleteVideo } from "@/lib/videos.functions";
-import { parseVideoUrl, thumbnailFor } from "@/lib/video-utils";
+import { adminStatusQuery, adsQuery, videosQuery } from "@/lib/queries";
+import { addVideo, adminLogin, adminLogout, deleteVideo, saveAds } from "@/lib/videos.functions";
+import { parseVideoUrl } from "@/lib/video-utils";
+import { AD_CODE_MAX, AD_COUNT, AD_SECONDS } from "@/lib/ads";
+import { VideoThumb } from "@/components/VideoThumb";
 import { SiteHeader } from "@/components/SiteHeader";
 import { timeAgo } from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -157,6 +160,8 @@ function Dashboard() {
         </Button>
       </form>
 
+      <AdsForm />
+
       <section>
         <h2 className="mb-4 font-display text-lg font-semibold">সব ভিডিও ({videos.length})</h2>
         {videos.length === 0 ? (
@@ -164,11 +169,10 @@ function Dashboard() {
         ) : (
           <ul className="space-y-3">
             {videos.map((v) => {
-              const thumb = thumbnailFor(v.url);
               return (
                 <li key={v.id} className="glass flex items-center gap-3 rounded-2xl p-3">
                   <div className="aspect-video w-24 shrink-0 overflow-hidden rounded-lg bg-secondary">
-                    {thumb ? <img src={thumb} alt="" className="size-full object-cover" /> : <div className="bg-brand-gradient size-full opacity-50" />}
+                    <VideoThumb url={v.url} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{v.title}</p>
@@ -198,6 +202,56 @@ function Dashboard() {
         )}
       </section>
     </div>
+  );
+}
+
+function AdsForm() {
+  const qc = useQueryClient();
+  const { data: ads } = useSuspenseQuery(adsQuery());
+  const save = useServerFn(saveAds);
+  const [codes, setCodes] = useState<string[]>(() => Array.from({ length: AD_COUNT }, (_, i) => ads[i + 1] ?? ""));
+  const m = useMutation({
+    mutationFn: () => save({ data: { codes } }),
+    onSuccess: () => {
+      toast.success("বিজ্ঞাপন সেভ হয়েছে!");
+      qc.invalidateQueries({ queryKey: ["ads"] });
+    },
+    onError: (e) => handleAuthError(e, (msg) => msg && toast.error(msg), qc),
+  });
+
+  return (
+    <form
+      className="glass space-y-4 rounded-3xl p-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        m.mutate();
+      }}
+    >
+      <div>
+        <h2 className="font-display text-lg font-semibold">বিজ্ঞাপন</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          প্রতিটি ভিডিওর আগে এই {AD_COUNT}টি বিজ্ঞাপন একটার পর একটা দেখাবে (প্রতিটি {AD_SECONDS} সেকেন্ড)। বিজ্ঞাপন নেটওয়ার্কের কোড এখানে পেস্ট করুন।
+        </p>
+      </div>
+      {codes.map((code, i) => (
+        <div key={i} className="space-y-2">
+          <Label htmlFor={`ad-${i + 1}`}>বিজ্ঞাপন {i + 1} এর কোড</Label>
+          <Textarea
+            id={`ad-${i + 1}`}
+            value={code}
+            maxLength={AD_CODE_MAX}
+            rows={4}
+            spellCheck={false}
+            onChange={(e) => setCodes((c) => c.map((x, j) => (j === i ? e.target.value : x)))}
+            placeholder={'<script ...></script> অথবা <a href="..."><img src="..."></a>'}
+            className="font-mono text-xs"
+          />
+        </div>
+      ))}
+      <Button type="submit" className="w-full sm:w-auto" disabled={m.isPending}>
+        {m.isPending ? "সেভ হচ্ছে…" : "বিজ্ঞাপন সেভ করুন"}
+      </Button>
+    </form>
   );
 }
 
