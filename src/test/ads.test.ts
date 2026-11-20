@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AD_COUNT, AD_SECONDS, firstAdStep, nextAdStep } from "@/lib/ads";
+import { AD_COUNT, AD_SECONDS, firstAdStep, isValidAdUrl, nextAdStep } from "@/lib/ads";
 
 describe("ads before every video", () => {
   it("shows exactly 2 ads before the video plays", () => {
@@ -14,7 +14,16 @@ describe("ads before every video", () => {
     expect(step.kind).toBe("video");
   });
 
-  it("makes each ad wait 5 seconds", () => {
-    expect(AD_SECONDS).toBe(5);
+  it("makes each ad wait 15 seconds in a new tab", () => {
+    expect(AD_SECONDS).toBe(15);
+  });
+
+  it("accepts only http(s) ad links, empty allowed", () => {
+    expect(isValidAdUrl("")).toBe(true);
+    expect(isValidAdUrl("https://ads.example.com/click?id=1")).toBe(true);
+    expect(isValidAdUrl("http://ads.example.com")).toBe(true);
+    expect(isValidAdUrl("javascript:alert(1)")).toBe(false);
+    expect(isValidAdUrl("<script>alert(1)</script>")).toBe(false);
+    expect(isValidAdUrl("not a url")).toBe(false);
   });
 });

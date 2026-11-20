@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { parseVideoUrl } from "./video-utils";
-import { AD_CODE_MAX, AD_COUNT } from "./ads";
+import { AD_COUNT, isValidAdUrl } from "./ads";
 import {
   LOCKOUT_MINUTES,
   MAX_FAILED_LOGINS,
@@ -133,7 +133,7 @@ export const getAds = createServerFn({ method: "GET" }).handler(async (): Promis
 export const saveAds = createServerFn({ method: "POST" })
   .inputValidator((input: { codes: string[] }) => {
     const codes = Array.from({ length: AD_COUNT }, (_, i) => String(input.codes?.[i] ?? "").trim());
-    if (codes.some((c) => c.length > AD_CODE_MAX)) throw new Error("বিজ্ঞাপনের কোড অনেক বড়।");
+    if (codes.some((c) => !isValidAdUrl(c))) throw new Error("বিজ্ঞাপনের লিংক ঠিক নেই। http:// বা https:// দিয়ে শুরু হওয়া লিংক দিন।");
     return { codes };
   })
   .handler(async ({ data }) => {

@@ -7,14 +7,13 @@ import { ExternalLink, Lock, LogOut, Trash2 } from "lucide-react";
 import { adminStatusQuery, adsQuery, videosQuery } from "@/lib/queries";
 import { addVideo, adminLogin, adminLogout, deleteVideo, saveAds } from "@/lib/videos.functions";
 import { parseVideoUrl } from "@/lib/video-utils";
-import { AD_CODE_MAX, AD_COUNT, AD_SECONDS } from "@/lib/ads";
+import { AD_COUNT, AD_SECONDS, AD_URL_MAX } from "@/lib/ads";
 import { VideoThumb } from "@/components/VideoThumb";
 import { SiteHeader } from "@/components/SiteHeader";
 import { timeAgo } from "@/components/VideoCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -230,20 +229,21 @@ function AdsForm() {
       <div>
         <h2 className="font-display text-lg font-semibold">বিজ্ঞাপন</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          প্রতিটি ভিডিওর আগে এই {AD_COUNT}টি বিজ্ঞাপন একটার পর একটা দেখাবে (প্রতিটি {AD_SECONDS} সেকেন্ড)। বিজ্ঞাপন নেটওয়ার্কের কোড এখানে পেস্ট করুন।
+          প্রতিটি ভিডিওর আগে এই {AD_COUNT}টি বিজ্ঞাপন একটার পর একটা নতুন ট্যাবে খুলবে (প্রতিটির জন্য {AD_SECONDS} সেকেন্ড অপেক্ষা)। বিজ্ঞাপন নেটওয়ার্কের ডাইরেক্ট লিংক এখানে পেস্ট করুন।
         </p>
       </div>
       {codes.map((code, i) => (
         <div key={i} className="space-y-2">
-          <Label htmlFor={`ad-${i + 1}`}>বিজ্ঞাপন {i + 1} এর কোড</Label>
-          <Textarea
+          <Label htmlFor={`ad-${i + 1}`}>বিজ্ঞাপন {i + 1} এর লিংক</Label>
+          <Input
             id={`ad-${i + 1}`}
             value={code}
-            maxLength={AD_CODE_MAX}
-            rows={4}
+            maxLength={AD_URL_MAX}
+            type="url"
+            dir="ltr"
             spellCheck={false}
             onChange={(e) => setCodes((c) => c.map((x, j) => (j === i ? e.target.value : x)))}
-            placeholder={'<script ...></script> অথবা <a href="..."><img src="..."></a>'}
+            placeholder="https://..."
             className="font-mono text-xs"
           />
         </div>
